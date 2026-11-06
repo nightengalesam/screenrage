@@ -1,0 +1,623 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<title>SCREENRAGE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DotGothic16&display=swap">
+<style>
+:root{--fg:#62F77E;--dim:#62F77E;--line:#62F77E;--hover:#0B2213;--bg:#000}   /* one green everywhere since 2026-11-05 (Sam): --dim and --line both equal --fg; the three names stay so they can be split again */
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--fg)}
+body{font-family:"DotGothic16",ui-monospace,Menlo,monospace;font-size:16px;line-height:1.45;padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)}
+a{color:var(--fg)}
+button,a.offer{font-family:inherit;font-size:inherit}
+button{color:var(--fg);background:transparent;border:1px solid var(--line);cursor:pointer;min-height:44px;padding:0 12px;letter-spacing:.06em;text-transform:uppercase}
+button:hover,.opt:hover,a.offer:hover{background:var(--hover)}
+button.watch{border:0;background:var(--fg);color:#000}
+button.watch:hover{filter:brightness(1.1);background:var(--fg)}
+button:focus-visible,a:focus-visible{outline:2px solid var(--fg);outline-offset:2px}
+[hidden]{display:none!important}
+.dim{color:var(--dim)}
+.run{flex:1;min-width:0;overflow:hidden;white-space:nowrap}
+.ln{display:flex;align-items:center;white-space:nowrap;line-height:1;font-size:16px;height:16px}
+.ln h2{margin:0;font-size:16px;font-weight:400;letter-spacing:.12em;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:0 1 auto}
+.ln .lbl{letter-spacing:.12em;text-transform:uppercase}
+.sides{margin:0 4px;border-left:1px solid var(--fg);border-right:1px solid var(--fg)}
+.sides2{margin:0 4px;border-left:2px solid var(--fg);border-right:2px solid var(--fg)}
+.page{padding:20px 16px 32px}
+.frame{max-width:1200px;margin:0 auto;display:flex;flex-direction:column}
+.inner{padding:18px 20px 22px;display:flex;flex-direction:column;gap:22px}
+header{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:16px 32px}
+h1{margin:0;font-size:0}
+.sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}
+pre.banner{margin:0;font-family:inherit;font-size:min(16px,calc((100vw - 80px)/32));line-height:1.05;letter-spacing:0;color:var(--fg)}
+.hud{display:flex;align-items:center;gap:18px;font-size:15px;letter-spacing:.08em;text-transform:uppercase}
+.badge{padding:3px 10px;background:var(--fg);color:#000}
+#home{display:flex;flex-direction:column;gap:22px}
+.rollzone{position:relative;display:grid;place-items:center;padding:34px 0}
+.rollwrap{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:18px;width:100%}
+.tagline{margin:0;text-align:center;font-size:16px;letter-spacing:.05em;line-height:1.5}
+#reroll{display:inline-flex;align-items:center;gap:22px;padding:10px 28px 10px 20px;border:1px solid var(--fg);text-align:left;text-transform:none;letter-spacing:0}
+#reroll .die{flex:none;color:var(--fg);display:block}
+#reroll .die circle{fill:none;stroke:currentColor;stroke-width:2}
+#reroll .die g{display:none}
+#reroll .die g.on{display:block}
+@keyframes spin{to{transform:rotate(720deg)}}
+#reroll.rolling .die{animation:spin .8s cubic-bezier(.35,.6,.3,1);transform-origin:50% 50%}
+#reroll .big{font-size:28px;letter-spacing:.14em;text-transform:uppercase}
+.progress{position:absolute;left:0;right:0;bottom:2px;margin:0;text-align:center;font-size:22px;line-height:1;letter-spacing:0;color:var(--fg);visibility:hidden;white-space:nowrap}
+.progress.on{visibility:visible}
+#home.rolling section.tier{opacity:.3;transition:opacity .2s}
+@keyframes fadein{from{opacity:0}}
+.card{animation:fadein .35s backwards}   /* opacity only, no fill-forward: leaves no compositing layer behind (iOS shook during rubber-band, Sam 2026-11-05) */
+@media (prefers-reduced-motion:reduce){#reroll.rolling .die{animation:none}.card{animation:none;transition:none}}
+.custom{display:flex;flex-direction:column}
+.customrow{display:flex;flex-wrap:wrap;align-items:center;gap:6px 14px}
+#panelToggle{align-self:flex-start;padding:0 6px;border:0;font-size:15px;letter-spacing:.08em}
+.brand{display:flex;flex-direction:column;align-items:center}
+.hint{margin:0;font-size:15px;letter-spacing:.05em;white-space:nowrap}
+.hint .arrow-up{display:none}
+.panel{display:flex;flex-direction:column;max-width:560px}
+.panel .sides{padding:6px 12px;display:flex;flex-direction:column}
+.opt{display:flex;align-items:center;gap:10px;min-height:44px;padding:0 6px;border:0;font-size:16px;text-align:left;white-space:nowrap;text-transform:none;letter-spacing:0}
+.opt .lbl{letter-spacing:.06em;text-transform:uppercase}
+.opt .run{color:var(--line)}
+.opt .val{padding:2px 8px}
+.opt .val.on{background:var(--fg);color:#000}
+.svcs{margin-top:10px;padding-top:12px;border-top:1px dashed var(--line);display:flex;flex-direction:column;gap:6px}
+.svchead,.svcnote{margin:0;padding:0 6px;font-size:14px}
+.svcgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:0 6px}
+.opt.svc{min-height:36px;font-size:15px;white-space:normal;line-height:1.25;padding:4px 6px;gap:8px;align-items:baseline}
+.opt.svc.wide{grid-column:1/-1}
+.opt.svc .box{flex:none}
+section.tier{display:flex;flex-direction:column}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:0}
+.card{display:flex;gap:14px;padding:16px 14px;border-left:1px solid var(--line);margin-left:-1px}
+.card{transition:opacity .3s}
+.card.seen{opacity:.5}
+.card.out{opacity:0}   /* marked seen: fades out, a fresh pick fades in (Sam, 2026-11-06) */
+.poster{flex:none;width:120px;height:180px;position:relative;background:#030a05}
+.poster img{display:block;width:100%;height:100%;object-fit:cover}
+.poster .nop{display:none;position:absolute;inset:0;border:1px solid var(--line);color:var(--dim);font-size:12px;letter-spacing:.08em;text-transform:uppercase;align-items:center;justify-content:center;text-align:center;padding:8px}
+.poster.nop .nop{display:flex}
+.poster.nop img{display:none}
+.meta{display:flex;flex-direction:column;gap:5px;min-width:0;flex:1}
+.meta h3{margin:0;font-size:17px;font-weight:400;line-height:1.25;text-transform:uppercase}
+.meta p{margin:0;font-size:15px}
+.meta .genres{font-size:14px}
+.tags{display:flex;flex-wrap:wrap;gap:6px;font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+.tag{color:var(--dim);border:1px solid var(--line);padding:2px 7px;line-height:1.3}
+.acts{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:auto;padding-top:6px}
+.acts button{min-height:40px;padding:0 10px;font-size:14px}
+.note{margin:0;padding:16px 14px;font-size:15px}
+/* watch view */
+#watch{display:flex;flex-direction:column}
+#back{align-self:flex-start;margin-bottom:14px;font-size:15px;letter-spacing:.08em}
+.wbody{display:flex;flex-wrap:wrap;gap:28px;padding:22px 20px}
+.wposter{flex:none;width:200px;height:300px}
+.wmeta{flex:1 1 360px;min-width:0;display:flex;flex-direction:column;gap:8px}
+.wmeta p{margin:0}
+.wblurb{max-width:72ch;line-height:1.55;margin:6px 0 10px}
+.box{display:flex;flex-direction:column;margin-top:12px}
+.box .sides{display:flex;flex-direction:column;padding:4px 10px}
+a.offer{display:flex;align-items:center;gap:12px;min-height:46px;padding:0 6px;text-decoration:none;color:var(--fg);font-size:16px;white-space:nowrap}
+a.offer .prov{text-transform:uppercase;letter-spacing:.04em}
+a.offer .run{color:var(--line)}
+.box p{margin:0;padding:12px 6px;font-size:15px}
+.wacts{display:flex;flex-wrap:wrap;align-items:center;gap:14px;margin-top:16px}
+.imdb{font-size:14px;text-decoration:none;letter-spacing:.06em;text-transform:uppercase}
+footer{font-size:12px;letter-spacing:.06em;text-transform:uppercase}
+@media (max-width:600px){
+  .page{padding:12px 8px 24px}
+  .inner{padding:14px 10px 18px;gap:18px}
+  .rollzone{padding:14px 0 32px}
+  .rollwrap{grid-template-columns:1fr;gap:12px}
+  .progress{font-size:18px}
+  #reroll{gap:14px;padding:8px 18px 8px 14px;justify-self:center}
+  #reroll .big{font-size:22px}
+  .tagline{font-size:14px}
+  .customrow{flex-direction:column;align-items:flex-start;gap:4px}
+  .hint{white-space:normal;font-size:14px;padding:0 6px}
+  .hint .arrow-l{display:none}
+  .hint .arrow-up{display:inline}
+  .poster{width:100px;height:150px}
+  .card{gap:12px;padding:14px 10px}
+  .opt{font-size:15px;padding:0 4px;gap:8px}
+  .wbody{gap:18px;padding:16px 10px}
+  .wposter{width:160px;height:240px}
+  a.offer{font-size:15px;gap:10px;padding:0 4px}
+  .hud{font-size:13px;gap:12px}
+}
+</style>
+</head>
+<body>
+<div class="page"><div class="frame">
+<div class="ln" aria-hidden="true"><span>+</span><span class="run">====================================================================================================================================================================================================================================================================================================================</span><span>+</span></div>
+<div class="sides2 inner">
+
+  <header>
+    <div class="brand">
+    <h1><span class="sr-only">Screenrage</span><pre class="banner" aria-hidden="true"> ____   ____ ____  _____ _____ _   _ ____      _    ____ _____
+/ ___| / ___|  _ \| ____| ____| \ | |  _ \    / \  / ___| ____|
+\___ \| |   | |_) |  _| |  _| |  \| | |_) |  / _ \| |  _|  _|
+ ___) | |___|  _ <| |___| |___| |\  |  _ <  / ___ \ |_| | |___
+|____/ \____|_| \_\_____|_____|_| \_|_| \_\/_/   \_\____|_____|</pre></h1>
+    </div>
+    <div class="hud"><span id="weirdBadge" class="badge" hidden>weird mode</span><span><span class="dim">seen</span> <span id="seenCount">0000</span></span></div>
+  </header>
+
+  <main id="home">
+    <div class="rollzone">
+    <div class="rollwrap">
+      <p class="tagline tag-l">Streaming and rental aggregator.</p>
+      <button type="button" id="reroll" aria-label="Reroll all three shelves">
+        <svg class="die" viewBox="0 0 64 64" width="56" height="56" aria-hidden="true" focusable="false">
+          <rect x="2" y="2" width="60" height="60" rx="7" fill="none" stroke="currentColor" stroke-width="2" pathLength="120" stroke-dasharray="4 2" stroke-dashoffset="1"/>
+          <g data-face="1"><circle cx="32" cy="32" r="4.5"/></g>
+          <g data-face="2"><circle cx="19" cy="19" r="4.5"/><circle cx="45" cy="45" r="4.5"/></g>
+          <g data-face="3"><circle cx="19" cy="19" r="4.5"/><circle cx="32" cy="32" r="4.5"/><circle cx="45" cy="45" r="4.5"/></g>
+          <g data-face="4"><circle cx="19" cy="19" r="4.5"/><circle cx="45" cy="19" r="4.5"/><circle cx="19" cy="45" r="4.5"/><circle cx="45" cy="45" r="4.5"/></g>
+          <g data-face="5" class="on"><circle cx="19" cy="19" r="4.5"/><circle cx="45" cy="19" r="4.5"/><circle cx="32" cy="32" r="4.5"/><circle cx="19" cy="45" r="4.5"/><circle cx="45" cy="45" r="4.5"/></g>
+          <g data-face="6"><circle cx="19" cy="17" r="4.5"/><circle cx="45" cy="17" r="4.5"/><circle cx="19" cy="32" r="4.5"/><circle cx="45" cy="32" r="4.5"/><circle cx="19" cy="47" r="4.5"/><circle cx="45" cy="47" r="4.5"/></g>
+        </svg>
+        <span class="big">[ reroll ]</span>
+      </button>
+      <p class="tagline tag-r">Data-driven movie recommendations.<br>Human/AI hybrid curation.</p>
+    </div>
+    <p class="progress" id="progress" aria-hidden="true"><span class="bar" id="progBar"></span></p>
+    </div>
+
+    <div class="custom">
+      <div class="customrow">
+        <button type="button" id="panelToggle" aria-expanded="false" aria-controls="panel">[+] customize my results</button>
+        <p class="hint"><span class="arrow-l">&lt;-</span><span class="arrow-up">^^^</span> select your streaming service and options</p>
+      </div>
+      <div class="panel" id="panel" hidden>
+        <div class="ln" aria-hidden="true"><span>+-- </span><span class="lbl">customize my results</span><span> </span><span class="run">--------------------------------------------------------------------------------------------------------------------------------------------</span><span>+</span></div>
+        <div class="sides">
+          <button type="button" class="opt" role="switch" aria-checked="false" data-opt="weird"><span class="lbl">weird mode</span><span class="run">. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .</span><span class="val" data-val="weird">&lt; Disabled &gt;</span></button>
+          <button type="button" class="opt" role="checkbox" aria-checked="false" data-opt="hideBw"><span>hide black &amp; white films</span><span class="run">. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .</span><span data-box="hideBw">[ ]</span></button>
+          <button type="button" class="opt" role="checkbox" aria-checked="false" data-opt="hideForeign"><span>hide foreign-language films</span><span class="run">. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .</span><span data-box="hideForeign">[ ]</span></button>
+          <button type="button" class="opt" role="checkbox" aria-checked="false" data-opt="hideSeen"><span>hide films I've seen</span><span class="run">. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .</span><span data-box="hideSeen">[ ]</span></button>
+          <div class="svcs">
+            <p class="dim svchead">only show films I can watch on:</p>
+            <div class="svcgrid" id="svcGrid"></div>
+            <p class="dim svcnote" id="svcNote"></p>
+          </div>
+        </div>
+        <div class="ln" aria-hidden="true"><span>+</span><span class="run">--------------------------------------------------------------------------------------------------------------------------------------------------------------</span><span>+</span></div>
+      </div>
+    </div>
+
+    <section class="tier" data-tier="famous" aria-labelledby="h-famous">
+      <div class="ln"><span aria-hidden="true">+-- </span><h2 id="h-famous">famous</h2><span aria-hidden="true"> </span><span class="run" aria-hidden="true">------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------</span><span aria-hidden="true">+</span></div>
+      <div class="sides grid"></div>
+      <div class="ln" aria-hidden="true"><span>+</span><span class="run">------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------</span><span>+</span></div>
+    </section>
+
+    <section class="tier" data-tier="underseen" aria-labelledby="h-underseen">
+      <div class="ln"><span aria-hidden="true">+-- </span><h2 id="h-underseen">underseen</h2><span aria-hidden="true"> </span><span class="run" aria-hidden="true">------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------</span><span aria-hidden="true">+</span></div>
+      <div class="sides grid"></div>
+      <div class="ln" aria-hidden="true"><span>+</span><span class="run">------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------</span><span>+</span></div>
+    </section>
+
+    <section class="tier" data-tier="underground" aria-labelledby="h-underground">
+      <div class="ln"><span aria-hidden="true">+-- </span><h2 id="h-underground">underground</h2><span aria-hidden="true"> </span><span class="run" aria-hidden="true">------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------</span><span aria-hidden="true">+</span></div>
+      <div class="sides grid"></div>
+      <div class="ln" aria-hidden="true"><span>+</span><span class="run">------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------</span><span>+</span></div>
+    </section>
+  </main>
+
+  <section id="watch" aria-labelledby="h-watch" hidden>
+    <button type="button" id="back">[ &lt; back ]</button>
+    <div class="ln"><span aria-hidden="true">+-- </span><h2 id="h-watch"></h2><span aria-hidden="true"> </span><span class="run" aria-hidden="true">------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------</span><span aria-hidden="true">+</span></div>
+    <div class="sides wbody">
+      <div class="poster wposter" id="wPoster"><img alt="" id="wImg"><span class="nop">no poster</span></div>
+      <div class="wmeta">
+        <p class="dim" id="wDirector"></p>
+        <p id="wStats"></p>
+        <div class="tags" id="wTags"></div>
+        <p class="dim wblurb" id="wOverview" hidden></p>
+        <div class="box">
+          <div class="ln" aria-hidden="true"><span>+-- </span><span class="lbl">streaming</span><span> </span><span class="run">----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------</span><span>+</span></div>
+          <div class="sides" id="wStream"></div>
+          <div class="ln" aria-hidden="true"><span>+</span><span class="run">----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------</span><span>+</span></div>
+        </div>
+        <div class="box" id="wRentBox" hidden>
+          <div class="ln" aria-hidden="true"><span>+-- </span><span class="lbl">rent</span><span> </span><span class="run">----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------</span><span>+</span></div>
+          <div class="sides" id="wRent"></div>
+          <div class="ln" aria-hidden="true"><span>+</span><span class="run">----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------</span><span>+</span></div>
+        </div>
+        <div class="box" id="wOthersBox" hidden>
+          <div class="ln" aria-hidden="true"><span>+-- </span><span class="lbl">others</span><span> </span><span class="run">----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------</span><span>+</span></div>
+          <div class="sides" id="wOthers"></div>
+          <div class="ln" aria-hidden="true"><span>+</span><span class="run">----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------</span><span>+</span></div>
+        </div>
+        <div class="wacts"><button type="button" id="wSeen">[ ] seen it</button><a class="imdb" id="wImdb" href="#" target="_blank" rel="noopener">&gt; imdb page</a></div>
+      </div>
+    </div>
+    <div class="ln" aria-hidden="true"><span>+</span><span class="run">------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------</span><span>+</span></div>
+  </section>
+
+  <footer class="dim" id="credits"></footer>
+  <span id="runProbe" aria-hidden="true" style="position:absolute;left:0;top:0;visibility:hidden;white-space:pre;pointer-events:none"></span>
+</div>
+<div class="ln" aria-hidden="true"><span>+</span><span class="run">====================================================================================================================================================================================================================================================================================================================</span><span>+</span></div>
+</div></div>
+<noscript><p style="padding:16px;color:#62F77E">screenrage needs javascript to roll the dice.</p></noscript>
+
+<script src="data.js"></script>
+<script>
+(function () {
+  'use strict';
+  var FILMS = window.SR_FILMS || [];
+  var TIERS = ['famous', 'underseen', 'underground'];
+  var LIBRARY = { Kanopy: 1, Hoopla: 1 };
+  var WEIGHT_K = 1.0;            // chance rises with IMDb score: weight = e^((score - 7) * K). Hypothesis; tune by feel.
+  var byId = {};
+  FILMS.forEach(function (f) { byId[f.i] = f; });
+
+  var state = { weird: false, hideBw: false, hideForeign: false, hideSeen: false, panel: false, rolled: false,
+                picks: {}, counts: {}, seen: loadSeen(), svc: loadSvc(), detail: null };
+
+  // "my services" filter (Sam, 2026-11-04): tick what you have; films with nothing on those drop out.
+  // Nothing ticked = no filter. Matching uses the STREAMING rows (tier 0) by provider name; the two
+  // group entries cover free-with-ads services (tier-0 free rows on non-subscription providers) and
+  // rentals (tier-1 rows on the known stores). Saved in this browser only, like the seen list.
+  var SERVICES = [
+    ['Netflix', 'netflix'], ['HBO Max', 'hbo max'], ['Hulu', 'hulu'], ['Disney+', 'disney+'],
+    ['Prime Video', 'prime video'], ['Paramount+', 'paramount+'], ['Peacock', 'peacock'], ['Apple TV', 'apple tv'],
+    ['Criterion Channel', 'criterion channel'], ['MGM+', 'mgm+'], ['AMC+', 'amc+'], ['Starz', 'starz'],
+    ['Shudder', 'shudder'], ['Mubi', 'mubi'], ['Kanopy', 'kanopy (library card)'], ['Hoopla', 'hoopla (library card)'],
+    ['*free', 'free with ads: tubi, pluto tv, youtube, plex, the roku channel, fandango free', 'wide'],
+    ['*rent', 'rentals, usually $3-5: amazon, apple tv, youtube, google play, fandango at home', 'wide']];
+  var SUBS = {}; SERVICES.forEach(function (sv) { if (sv[0].charAt(0) !== '*') SUBS[sv[0]] = 1; });
+  function loadSvc() { try { return JSON.parse(localStorage.getItem('screenrage.services') || '{}') || {}; } catch (e) { return {}; } }
+  function saveSvc() { try { localStorage.setItem('screenrage.services', JSON.stringify(state.svc)); } catch (e) {} }
+  function svcActive() { return Object.keys(state.svc).some(function (k) { return state.svc[k]; }); }
+  function avail(f) {
+    if (!svcActive()) return true;
+    for (var i = 0; i < f.o.length; i++) {
+      var o = f.o[i];
+      if (o[3] === 0) {
+        if (state.svc[o[0]]) return true;
+        if (state.svc['*free'] && !SUBS[o[0]] && (o[1] === 'free with ads' || o[1] === 'free')) return true;
+      } else if (o[3] === 1 && state.svc['*rent']) return true;
+    }
+    return false;
+  }
+
+  function loadSeen() { try { return JSON.parse(localStorage.getItem('screenrage.seen') || '{}') || {}; } catch (e) { return {}; } }
+  function saveSeen() { try { localStorage.setItem('screenrage.seen', JSON.stringify(state.seen)); } catch (e) {} }
+  function esc(s) { return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+  function poster(f, size) {
+    if (!f.p) return '';
+    if (f.p.charAt(0) === '/') return 'https://image.tmdb.org/t/p/' + (size === 's592' ? 'w500' : 'w342') + f.p;   // TMDB poster_path
+    var k = f.p.indexOf('/'); return 'https://images.justwatch.com/poster/' + f.p.slice(0, k) + '/' + size + '/' + f.p.slice(k + 1);
+  }
+  function pass(f) { return (!state.weird || f.adv) && !(state.hideBw && f.bw) && !(state.hideForeign && f.fo) && !(state.hideSeen && state.seen[f.i]) && avail(f); }
+  function weight(f) { return Math.exp((parseFloat(f.s) - 7) * WEIGHT_K); }
+
+  // weighted draw without replacement; avoid the films on the shelf right now when the pool allows it
+  function draw(list, n, avoid) {
+    var pool = list.slice();
+    if (avoid && pool.length > n * 2) pool = pool.filter(function (f) { return !avoid[f.i]; });
+    var out = [];
+    while (out.length < n && pool.length) {
+      var total = 0, cum = pool.map(function (f) { total += weight(f); return total; });
+      var r = Math.random() * total, k = 0;
+      while (k < cum.length - 1 && cum[k] <= r) k++;
+      out.push(pool[k]); pool.splice(k, 1);
+    }
+    return out;
+  }
+
+  function roll() {
+    TIERS.forEach(function (t) {
+      var ok = FILMS.filter(function (f) { return f.tier === t && pass(f); });
+      var avoid = {}; (state.picks[t] || []).forEach(function (f) { avoid[f.i] = 1; });
+      state.counts[t] = ok.length;
+      state.picks[t] = ok.length <= 3 ? ok.slice() : draw(ok, 3, avoid);
+    });
+    renderHome();
+  }
+
+  function tags(f) {
+    var out = [];
+    if (f.adv) out.push('weird');
+    if (f.fo) out.push('foreign');
+    if (f.bw) out.push('b&amp;w');
+    return out.map(function (t) { return '<span class="tag">' + t + '</span>'; }).join('');
+  }
+
+  function card(f, i) {
+    var seen = !!state.seen[f.i];
+    var img = f.p ? '<img src="' + poster(f, 's332') + '" alt="" onerror="this.parentNode.classList.add(\'nop\')">' : '';
+    return '<article class="card' + (seen ? ' seen' : '') + '" data-id="' + f.i + '" style="animation-delay:' + ((i || 0) * 70) + 'ms">' +
+      '<div class="poster' + (f.p ? '' : ' nop') + '">' + img + '<span class="nop">no poster</span></div>' +
+      '<div class="meta">' +
+        '<h3>' + esc(f.t) + ' <span class="dim">(' + f.y + ')</span></h3>' +
+        '<p>&#9733; ' + f.s + ' <span class="dim">/ ' + f.v + ' ratings</span></p>' +
+        '<p class="dim genres">' + esc(f.g) + '</p>' +
+        (f.mr || f.c || f.rt ? '<p class="dim">' + [f.mr ? esc(f.mr) : '', f.c ? esc(f.c) : '', f.rt ? f.rt + ' min' : ''].filter(Boolean).join(' &middot; ') + '</p>' : '') +
+        '<div class="tags">' + tags(f) + '</div>' +
+        '<div class="acts"><button type="button" data-seen="' + f.i + '" aria-pressed="' + seen + '">' + (seen ? '[x]' : '[ ]') + ' seen</button>' +
+        '<button type="button" class="watch" data-watch="' + f.i + '">&gt; watch</button></div>' +
+      '</div></article>';
+  }
+
+  function shelfNote(t) {
+    var n = state.counts[t] || 0;
+    if (n === 0) return 'nothing on this shelf matches - loosen a filter.';
+    if (n < 3) return 'only ' + n + ' match' + (n === 1 ? 'es' : '') + ' here - loosen a filter for more.';
+    if (n === 3 && state.rolled) return 'all 3 matches shown - that is everything for these filters.';
+    return '';
+  }
+
+  function renderHome() {
+    TIERS.forEach(function (t) {
+      var grid = document.querySelector('section[data-tier="' + t + '"] .grid');
+      var picks = state.picks[t] || [], n = state.counts[t] || 0;
+      var html = picks.map(function (f, i) { return card(f, i); }).join('');
+      var note = shelfNote(t);
+      if (note) html += '<p class="note dim">' + note + '</p>';
+      grid.innerHTML = html;
+    });
+    renderHud();
+  }
+
+  function renderHud() {
+    var n = Object.keys(state.seen).length;
+    document.getElementById('seenCount').textContent = String(n).length >= 4 ? String(n) : ('0000' + n).slice(-4);
+    document.getElementById('weirdBadge').hidden = !state.weird;
+  }
+
+  function renderServices() {
+    document.querySelectorAll('.svc').forEach(function (b) {
+      var k = b.getAttribute('data-svc'), on = !!state.svc[k];
+      b.setAttribute('aria-checked', on ? 'true' : 'false');
+      b.querySelector('.box').textContent = on ? '[x]' : '[ ]';
+    });
+    var note = document.getElementById('svcNote');
+    if (svcActive()) {
+      var n = FILMS.filter(avail).length;
+      note.textContent = n + ' of ' + FILMS.length + ' films are available on what you ticked.';
+    } else {
+      note.textContent = 'nothing ticked = no filter.';
+    }
+  }
+
+  function renderOptions() {
+    renderServices();
+    document.querySelectorAll('.opt[data-opt]').forEach(function (b) {
+      var k = b.getAttribute('data-opt'), on = !!state[k];
+      b.setAttribute('aria-checked', on ? 'true' : 'false');
+    });
+    var v = document.querySelector('[data-val="weird"]');
+    v.textContent = state.weird ? '< Enabled >' : '< Disabled >';
+    v.className = 'val' + (state.weird ? ' on' : '');
+    ['hideBw', 'hideForeign', 'hideSeen'].forEach(function (k) {
+      document.querySelector('[data-box="' + k + '"]').textContent = state[k] ? '[x]' : '[ ]';
+    });
+    document.getElementById('panel').hidden = !state.panel;
+    if (typeof fitRuns === 'function') fitRuns();
+    var pt = document.getElementById('panelToggle');
+    pt.textContent = (state.panel ? '[-]' : '[+]') + ' customize my results';
+    pt.setAttribute('aria-expanded', state.panel ? 'true' : 'false');
+  }
+
+  function paintSeen(id) {
+    var seen = !!state.seen[id], a = document.querySelector('.card[data-id="' + id + '"]');
+    if (!a) return;
+    a.classList.toggle('seen', seen);
+    var b = a.querySelector('[data-seen]');
+    if (b) { b.textContent = (seen ? '[x]' : '[ ]') + ' seen'; b.setAttribute('aria-pressed', seen ? 'true' : 'false'); }
+  }
+
+  // Marking a film seen takes it off the shelf: its card fades out and a fresh unseen pick from the same
+  // tier (same filters, nothing already on a shelf) fades in. If nothing is left to swap in, the slot
+  // closes and the shelf says so. Un-marking only repaints the card. (Sam, 2026-11-06)
+  function replacePick(id) {
+    var f = byId[id]; if (!f) return;
+    var t = f.tier, picks = state.picks[t] || [], k = -1;
+    picks.forEach(function (p, j) { if (p.i === id) k = j; });
+    if (k < 0) return;
+    var onShelf = {};
+    TIERS.forEach(function (tt) { (state.picks[tt] || []).forEach(function (p) { onShelf[p.i] = 1; }); });
+    var pool = FILMS.filter(function (x) { return x.tier === t && pass(x) && !state.seen[x.i] && !onShelf[x.i]; });
+    var fresh = draw(pool, 1)[0];
+    if (fresh) picks[k] = fresh; else picks.splice(k, 1);
+    state.counts[t] = FILMS.filter(function (x) { return x.tier === t && pass(x); }).length;
+    var old = document.querySelector('.card[data-id="' + id + '"]');
+    var grid = document.querySelector('section[data-tier="' + t + '"] .grid');
+    function swap() {
+      if (old && old.parentNode) {
+        if (fresh) old.insertAdjacentHTML('afterend', card(fresh, 0));
+        old.parentNode.removeChild(old);
+      }
+      var el = grid.querySelector('.note');
+      var note = fresh ? shelfNote(t) : 'nothing else here you haven\'t seen - loosen a filter or reroll.';
+      if (!note) { if (el) el.parentNode.removeChild(el); return; }
+      if (!el) { el = document.createElement('p'); el.className = 'note dim'; grid.appendChild(el); }
+      el.textContent = note;
+    }
+    var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (old && !reduced && !document.getElementById('home').hidden) { old.classList.add('out'); setTimeout(swap, 320); }
+    else swap();
+  }
+
+  function toggleSeen(id) {
+    var marking = !state.seen[id];
+    if (marking) state.seen[id] = 1; else delete state.seen[id];
+    saveSeen();
+    renderHud();
+    if (state.detail === id) renderWatch(byId[id]);
+    paintSeen(id);
+    if (marking) replacePick(id);
+  }
+
+  function offerRow(o) {
+    return '<a class="offer" href="' + esc(o[2]) + '" target="_blank" rel="noopener"><span aria-hidden="true">&gt;</span>' +
+      '<span class="prov">' + esc(o[0]) + '</span><span class="run">. . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . . .</span>' +
+      '<span>' + esc(o[1]) + '</span></a>';
+  }
+
+  function renderWatch(f) {
+    var seen = !!state.seen[f.i];
+    document.getElementById('h-watch').innerHTML = esc(f.t) + ' <span class="dim">(' + f.y + ')</span>';
+    var wp = document.getElementById('wPoster'), img = document.getElementById('wImg');
+    wp.classList.toggle('nop', !f.p);
+    img.onerror = function () { wp.classList.add('nop'); };
+    if (f.p) img.src = poster(f, 's592'); else img.removeAttribute('src');
+    document.getElementById('wDirector').textContent = [f.d, f.y, f.mr, f.c, f.rt ? f.rt + ' min' : ''].filter(Boolean).join(' \u00b7 ');
+    document.getElementById('wStats').innerHTML = '&#9733; ' + f.s + ' <span class="dim">/ ' + f.v + ' ratings / ' + esc(f.g) + '</span>';
+    document.getElementById('wTags').innerHTML = tags(f);
+    var ov = document.getElementById('wOverview'); ov.hidden = !f.ov; ov.textContent = f.ov || '';
+    var st = f.o.filter(function (o) { return o[3] === 0; }), rt = f.o.filter(function (o) { return o[3] === 1; }), ot = f.o.filter(function (o) { return o[3] === 2; });
+    var sh = st.map(offerRow).join('');
+    if (!st.length) sh += '<p class="dim">' + (f.o.length ? 'not free or included anywhere right now.' : 'no us streaming or rental found for this one. try your library.') + '</p>';
+    if (st.some(function (o) { return LIBRARY[o[0]]; })) sh += '<p class="dim" style="padding-top:6px;font-size:14px">kanopy and hoopla are free with a participating library card.</p>';
+    document.getElementById('wStream').innerHTML = sh;
+    document.getElementById('wRentBox').hidden = !rt.length;
+    document.getElementById('wRent').innerHTML = rt.map(offerRow).join('');
+    document.getElementById('wOthersBox').hidden = !ot.length;
+    document.getElementById('wOthers').innerHTML = ot.map(offerRow).join('');
+    var sb = document.getElementById('wSeen');
+    sb.textContent = (seen ? '[x]' : '[ ]') + ' seen it';
+    sb.setAttribute('aria-pressed', seen ? 'true' : 'false');
+    document.getElementById('wImdb').href = 'https://www.imdb.com/title/' + f.i + '/';
+  }
+
+  function openWatch(id, fromHash) {
+    var f = byId[id]; if (!f) return;
+    state.detail = id;
+    renderWatch(f);
+    document.getElementById('home').hidden = true;
+    document.getElementById('watch').hidden = false;
+    fitRuns();
+    if (!fromHash) { try { history.pushState({ id: id }, '', '#' + id); } catch (e) {} }
+    window.scrollTo(0, 0);
+    document.title = f.t.toUpperCase() + ' - SCREENRAGE';
+  }
+
+  function closeWatch(fromPop) {
+    state.detail = null;
+    document.getElementById('watch').hidden = true;
+    document.getElementById('home').hidden = false;
+    document.title = 'SCREENRAGE';
+    if (!fromPop) { try { history.pushState({}, '', location.pathname + location.search); } catch (e) {} }
+    renderHome();
+    fitRuns();
+  }
+
+  // Trim every ASCII rule (.run) to the characters that fit its width. The markup carries 300-char runs
+  // clipped by overflow:hidden; iOS rasterised all of it on fast scrolls and shook during rubber-band
+  // (Sam, 2026-11-05). Runs re-fit on resize, after the font loads, and whenever a hidden part opens.
+  function fitRuns() {
+    var probe = document.getElementById('runProbe'), runCharW = {};   // measured fresh each time: the web font can arrive after the first fit
+    document.querySelectorAll('.run').forEach(function (r) {
+      var w = r.clientWidth;
+      if (!w) return;                                   // inside something hidden; fitted when it opens
+      var pat = r.getAttribute('data-pat');
+      if (!pat) {
+        var t = r.textContent;
+        pat = (t.length > 1 && t.charAt(1) === ' ') ? t.slice(0, 2) : (t.charAt(0) || '-');
+        r.setAttribute('data-pat', pat);
+      }
+      var cs = getComputedStyle(r), key = cs.font + '|' + cs.letterSpacing + '|' + pat;
+      if (!runCharW[key]) {
+        probe.style.font = cs.font; probe.style.letterSpacing = cs.letterSpacing; probe.textContent = pat.repeat(20);
+        runCharW[key] = probe.getBoundingClientRect().width / 20 || 8;
+      }
+      var n = Math.ceil(w / runCharW[key]) + 3;
+      if (r.textContent.length !== n * pat.length) r.textContent = pat.repeat(n);
+    });
+  }
+  var fitTimer = null;
+  window.addEventListener('resize', function () { clearTimeout(fitTimer); fitTimer = setTimeout(fitRuns, 150); });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitRuns);
+
+  // reroll animation (Sam, 2026-11-05): spin the die, run a fake terminal progress line, then roll.
+  var ROLL_MS = 950, rolling = false;
+  function repeatCh(ch, n) { return new Array(n + 1).join(ch); }
+  function showFace(n) {
+    document.querySelectorAll('#reroll .die g').forEach(function (g) { g.classList.toggle('on', g.getAttribute('data-face') === String(n)); });
+  }
+  function animatedRoll() {
+    if (rolling) return;
+    rolling = true;
+    var btn = document.getElementById('reroll'), prog = document.getElementById('progress'), home = document.getElementById('home');
+    var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var total = reduced ? 250 : ROLL_MS, t0 = Date.now();
+    var bar = document.getElementById('progBar');
+    bar.textContent = '##########';                                   // measure ten cells, then size the bar to ~70% of the row
+    var cells = Math.max(16, Math.min(60, Math.floor(prog.clientWidth * 0.7 / (bar.getBoundingClientRect().width / 10 || 11))));
+    btn.classList.add('rolling'); home.classList.add('rolling'); prog.classList.add('on'); btn.disabled = true;
+    (function tick() {
+      var p = Math.min(1, (Date.now() - t0) / total), k = Math.round(p * cells);
+      bar.textContent = '[' + repeatCh('#', k) + repeatCh('.', cells - k) + ']';
+      if (p < 1) { requestAnimationFrame(tick); return; }
+      state.rolled = true; roll(); showFace(1 + Math.floor(Math.random() * 6));
+      btn.classList.remove('rolling'); home.classList.remove('rolling'); btn.disabled = false;
+      setTimeout(function () { if (!rolling) prog.classList.remove('on'); }, 350);
+      rolling = false;
+    })();
+  }
+
+  // events
+  document.getElementById('svcGrid').innerHTML = SERVICES.map(function (sv) {
+    return '<button type="button" class="opt svc' + (sv[2] ? ' ' + sv[2] : '') + '" role="checkbox" aria-checked="false" data-svc="' + esc(sv[0]) + '">' +
+      '<span class="box">[ ]</span><span>' + esc(sv[1]) + '</span></button>';
+  }).join('');
+  document.querySelectorAll('.svc').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var k = b.getAttribute('data-svc');
+      state.svc[k] = !state.svc[k]; saveSvc(); state.rolled = false; state.picks = {};
+      renderServices(); roll();
+    });
+  });
+  document.getElementById('reroll').addEventListener('click', animatedRoll);
+  document.getElementById('panelToggle').addEventListener('click', function () { state.panel = !state.panel; renderOptions(); });
+  document.querySelectorAll('.opt[data-opt]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var k = b.getAttribute('data-opt');
+      state[k] = !state[k]; state.rolled = false; state.picks = {};
+      renderOptions(); roll();
+    });
+  });
+  document.getElementById('back').addEventListener('click', function () { closeWatch(false); });
+  document.getElementById('wSeen').addEventListener('click', function () { if (state.detail) toggleSeen(state.detail); });
+  document.addEventListener('click', function (e) {
+    var t = e.target.closest ? e.target.closest('[data-seen],[data-watch]') : null;
+    if (!t) return;
+    if (t.hasAttribute('data-seen')) toggleSeen(t.getAttribute('data-seen'));
+    else openWatch(t.getAttribute('data-watch'), false);
+  });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && state.detail) closeWatch(false); });
+  window.addEventListener('popstate', function () {
+    var id = (location.hash || '').slice(1);
+    if (id && byId[id]) openWatch(id, true); else if (state.detail) closeWatch(true);
+  });
+
+  // boot
+  // Footer credits are OFF for the friends demo (Sam, 2026-11-05: "get rid of all of that text at the bottom
+  // ... and the logo"). TMDB's API terms require the notice + logo on a public site: set CREDITS_ON = true
+  // before a wider launch and they come back exactly as before.
+  var CREDITS_ON = false;
+  document.getElementById('credits').hidden = !CREDITS_ON;
+  if (CREDITS_ON) document.getElementById('credits').innerHTML = (window.SR_SOURCE === 'tmdb'
+    ? '<img src="tmdb.svg" alt="TMDB" style="height:11px;vertical-align:-1px;margin-right:6px">This product uses the TMDB API but is not endorsed or certified by TMDB. &middot; where to watch: JustWatch &middot; Information courtesy of IMDb (https://www.imdb.com). Used with permission. &middot; no accounts, no tracking: your seen list stays in this browser'
+    : 'ratings: imdb &middot; where to watch and posters: justwatch (us)') + ' &middot; catalog ' + esc(window.SR_BUILT || '');
+  renderOptions();
+  roll();
+  fitRuns();
+  var start = (location.hash || '').slice(1);
+  if (start && byId[start]) openWatch(start, true);
+})();
+</script>
+</body>
+</html>
